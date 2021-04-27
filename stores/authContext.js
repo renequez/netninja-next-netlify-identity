@@ -10,6 +10,7 @@ const AuthContext = createContext({
 
 export const AuthContextProvider = ({ children }) => {
 	const [user, setUser] = useState(null);
+	const [authReady, setAuthReady] = useState(false);
 
 	const login = () => {
 		netlifyIdentity.open();
@@ -21,24 +22,31 @@ export const AuthContextProvider = ({ children }) => {
 
 	useEffect(() => {
 		// init netlify identity connection
-		netlifyIdentity.init();
 
 		// add listeners
 		netlifyIdentity.on('login', (user) => {
 			setUser(user);
 			netlifyIdentity.close();
-			console.log('Login event');
+			console.log('login event / user:', user);
 		});
 
 		netlifyIdentity.on('logout', () => {
 			setUser(null);
-			console.log('Logout event');
+			console.log('logout event');
 		});
 
+		netlifyIdentity.on('init', (user) => {
+			setUser(user);
+			setAuthReady(true);
+			console.log('init event');
+		});
+
+		netlifyIdentity.init();
 		// remove listeners
 		return () => {
 			netlifyIdentity.off('login');
 			netlifyIdentity.off('logout');
+			// netlifyIdentity.off('init');
 		};
 	}, []);
 
@@ -46,6 +54,7 @@ export const AuthContextProvider = ({ children }) => {
 		user,
 		login,
 		logout,
+		authReady,
 	};
 
 	return <AuthContext.Provider value={context}>{children}</AuthContext.Provider>;
